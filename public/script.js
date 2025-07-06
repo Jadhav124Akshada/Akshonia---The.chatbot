@@ -1,44 +1,50 @@
 const form = document.getElementById('chat-form');
 const chat = document.getElementById('chat');
+const input = document.getElementById('prompt');
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
-  const userInput = document.getElementById('prompt').value.trim();
+  const userInput = input.value.trim();
   if (!userInput) return;
 
   appendMessage('user', userInput);
-  form.reset();
+  input.value = '';
 
-  appendMessage('bot', 'Typing...');
+  const botMessage = appendMessage('bot', 'Typing...');
 
   try {
-    const res = await fetch('https://akshonia-api.onrender.com/api/chat', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: userInput })
     });
     const data = await res.json();
-    updateLastMessage('bot', data.reply || 'No reply');
+    updateMessage(botMessage, data.reply || '🤖 No reply received.');
   } catch (err) {
-    updateLastMessage('bot', 'Error: Could not fetch reply.');
+    updateMessage(botMessage, '🤖 Error: Could not fetch reply.');
   }
 });
 
-function appendMessage(who, text) {
-  const div = document.createElement('div');
-  div.className = `message ${who}`;
-  div.innerHTML = `
-    <div class="icon">${who === 'user' ? '🧑‍💻' : '🤖'}</div>
-    <div class="message-content">${text}</div>
-  `;
-  chat.appendChild(div);
+function appendMessage(role, text) {
+  const message = document.createElement('div');
+  message.className = `message ${role}`;
+
+  const icon = document.createElement('div');
+  icon.className = 'icon';
+  icon.textContent = role === 'user' ? '🧑‍💻' : '🤖';
+
+  const content = document.createElement('div');
+  content.className = 'message-content';
+  content.textContent = text;
+
+  message.appendChild(icon);
+  message.appendChild(content);
+  chat.appendChild(message);
   chat.scrollTop = chat.scrollHeight;
+
+  return content;
 }
 
-function updateLastMessage(who, text) {
-  const messages = chat.getElementsByClassName('message');
-  const last = messages[messages.length - 1];
-  if (last && last.classList.contains(who)) {
-    last.querySelector('.message-content').textContent = text;
-  }
+function updateMessage(contentElement, newText) {
+  contentElement.textContent = newText;
 }
